@@ -1,0 +1,64 @@
+{
+  "name": "dns402",
+  "version": "1.0.0",
+  "description": "Decentralized payment discovery protocol via DNS TXT records on Solana",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.mjs",
+      "require": "./dist/client/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.mjs",
+      "require": "./dist/server/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "dns",
+    "402",
+    "payment",
+    "solana",
+    "crypto",
+    "micropayments",
+    "api",
+    "monetization"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@solana/spl-token": "^0.4.13",
+    "@solana/web3.js": "^1.98.0",
+    "bs58": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.15.21",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "express": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  }
+}
