@@ -91,7 +91,7 @@ v=dns402;p=0.01;c=USDC;n=solana;w=7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU;t
 |-------|-------------|
 | `v` | Protocol version (always `dns402`) |
 | `p` | Price amount |
-| `c` | Currency (`SOL` or `USDC`) |
+| `c` | Currency (`SOL`, `USDC`, or `DNS402`) |
 | `n` | Network (always `solana`) |
 | `w` | Recipient wallet address |
 | `t` | Session TTL in seconds |
@@ -157,7 +157,7 @@ dns402(config: DNS402ServerConfig)
 
 - `wallet` - Recipient wallet address
 - `price` - Price per request/session
-- `currency` - `'SOL'` or `'USDC'`
+- `currency` - `'SOL'`, `'USDC'`, or `'DNS402'`
 - `sessionTTL` - Session duration in seconds (default: 3600)
 - `rpcEndpoint` - Solana RPC for verification
 - `onPayment` - Callback on successful payment
@@ -182,6 +182,51 @@ resolveRecord(domain: string): Promise<DNS402Record | null>
 
 - **SOL** - Native Solana
 - **USDC** - SPL Token (mainnet: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`)
+- **DNS402** - Native protocol token (mint: `E18mVPoZqe7FEQyJumioqPAcvKao96WadMK8PR5pump`)
+
+### Using DNS402 Token
+
+The DNS402 token is the native currency of the protocol. Using it for payments may offer benefits like reduced fees or protocol incentives.
+
+**Server configuration:**
+
+```typescript
+app.use('/api/premium', dns402({
+  wallet: 'YOUR_WALLET',
+  price: 100, // 100 DNS402 tokens
+  currency: 'DNS402',
+  sessionTTL: 3600
+}));
+```
+
+**DNS record:**
+
+```
+_402.api.example.com TXT "v=dns402;p=100;c=DNS402;n=solana;w=YOUR_WALLET;t=3600"
+```
+
+**Client auto-pay:**
+
+```typescript
+const client = new DNS402Client({
+  keypair: wallet.secretKey,
+  autoPay: {
+    enabled: true,
+    maxAmount: 1000,
+    currency: 'DNS402'
+  }
+});
+```
+
+## Changelog
+
+### v1.1.0
+
+- Added **DNS402 token** support as native protocol currency
+- New `sendDNS402Payment()` function for direct token payments
+- Generic `sendSPLTokenPayment()` function for any SPL token
+- Extended `SupportedCurrency` type: `'SOL' | 'USDC' | 'DNS402'`
+- Token mint: `E18mVPoZqe7FEQyJumioqPAcvKao96WadMK8PR5pump`
 
 ## License
 

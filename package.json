@@ -1,6 +1,6 @@
 {
   "name": "dns402",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Decentralized payment discovery protocol via DNS TXT records on Solana",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

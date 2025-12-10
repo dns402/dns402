@@ -13,8 +13,8 @@ import {
   getAccount,
   createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
-import type { DNS402Record, PaymentProof } from './types';
-import { USDC_MINTS } from './types';
+import type { DNS402Record, PaymentProof, SupportedCurrency } from './types';
+import { USDC_MINTS, DNS402_MINT, TOKEN_DECIMALS } from './types';
 
 const DEFAULT_RPC = 'https://api.mainnet-beta.solana.com';
 
@@ -55,21 +55,22 @@ export async function sendSOLPayment(
 }
 
 /**
- * Send USDC (SPL token) payment
+ * Send SPL token payment (USDC, DNS402, or custom token)
  */
-export async function sendUSDCPayment(
+export async function sendSPLTokenPayment(
   connection: Connection,
   payer: Keypair,
   recipient: string,
   amount: number,
-  mint?: string
+  mint: string,
+  decimals: number = 6
 ): Promise<PaymentProof> {
-  const usdcMint = new PublicKey(mint || USDC_MINTS.mainnet);
+  const tokenMint = new PublicKey(mint);
   const recipientPubkey = new PublicKey(recipient);
 
   // Get associated token accounts
-  const payerATA = await getAssociatedTokenAddress(usdcMint, payer.publicKey);
-  const recipientATA = await getAssociatedTokenAddress(usdcMint, recipientPubkey);
+  const payerATA = await getAssociatedTokenAddress(tokenMint, payer.publicKey);
+  const recipientATA = await getAssociatedTokenAddress(tokenMint, recipientPubkey);
 
   const transaction = new Transaction();
 
@@ -82,13 +83,13 @@ export async function sendUSDCPayment(
         payer.publicKey,
         recipientATA,
         recipientPubkey,
-        usdcMint
+        tokenMint
       )
     );
   }
 
-  // USDC has 6 decimals
-  const tokenAmount = Math.floor(amount * 1_000_000);
+  // Calculate token amount based on decimals
+  const tokenAmount = Math.floor(amount * Math.pow(10, decimals));
 
   transaction.add(
     createTransferInstruction(
@@ -109,6 +110,46 @@ export async function sendUSDCPayment(
 }
 
 /**
+ * Send USDC payment
+ * @deprecated Use sendSPLTokenPayment instead
+ */
+export async function sendUSDCPayment(
+  connection: Connection,
+  payer: Keypair,
+  recipient: string,
+  amount: number,
+  mint?: string
+): Promise<PaymentProof> {
+  return sendSPLTokenPayment(
+    connection,
+    payer,
+    recipient,
+    amount,
+    mint || USDC_MINTS.mainnet,
+    TOKEN_DECIMALS.USDC
+  );
+}
+
+/**
+ * Send DNS402 token payment
+ */
+export async function sendDNS402Payment(
+  connection: Connection,
+  payer: Keypair,
+  recipient: string,
+  amount: number
+): Promise<PaymentProof> {
+  return sendSPLTokenPayment(
+    connection,
+    payer,
+    recipient,
+    amount,
+    DNS402_MINT,
+    TOKEN_DECIMALS.DNS402
+  );
+}
+
+/**
  * Send payment based on DNS402 record
  */
 export async function sendPayment(
@@ -116,12 +157,33 @@ export async function sendPayment(
   payer: Keypair,
   record: DNS402Record
 ): Promise<PaymentProof> {
-  if (record.currency === 'SOL') {
-    return sendSOLPayment(connection, payer, record.wallet, record.price);
-  } else if (record.currency === 'USDC') {
-    return sendUSDCPayment(connection, payer, record.wallet, record.price, record.mint);
-  } else {
-    throw new Error(`Unsupported currency: ${record.currency}`);
+  switch (record.currency) {
+    case 'SOL':
+      return sendSOLPayment(connection, payer, record.wallet, record.price);
+    case 'USDC':
+      return sendSPLTokenPayment(
+        connection,
+        payer,
+        record.wallet,
+        record.price,
+        record.mint || USDC_MINTS.mainnet,
+        TOKEN_DECIMALS.USDC
+      );
+    case 'DNS402':
+      return sendDNS402Payment(connection, payer, record.wallet, record.price);
+    default:
+      // Support custom tokens via mint field
+      if (record.mint) {
+        return sendSPLTokenPayment(
+          connection,
+          payer,
+          record.wallet,
+          record.price,
+          record.mint,
+          6 // default decimals
+        );
+      }
+      throw new Error(`Unsupported currency: ${record.currency}`);
   }
 }
 
@@ -133,7 +195,7 @@ export async function verifyPayment(
   signature: string,
   expectedRecipient: string,
   expectedAmount: number,
-  currency: 'SOL' | 'USDC'
+  currency: SupportedCurrency
 ): Promise<boolean> {
   try {
     const tx = await connection.getTransaction(signature, {
@@ -166,8 +228,8 @@ export async function verifyPayment(
           }
         }
       }
-    } else if (currency === 'USDC') {
-      // Check token transfer via post token balances
+    } else {
+      // Check SPL token transfer (USDC, DNS402, etc.) via post token balances
       const postTokenBalances = tx.meta.postTokenBalances || [];
       const preTokenBalances = tx.meta.preTokenBalances || [];
 

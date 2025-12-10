@@ -77,15 +77,15 @@ export interface DNS402ServerConfig {
   /** Price per request/session */
   price: number;
   /** Currency */
-  currency: 'SOL' | 'USDC';
+  currency: SupportedCurrency;
   /** Session TTL in seconds (default: 3600) */
   sessionTTL?: number;
   /** Solana RPC endpoint for verification */
   rpcEndpoint?: string;
   /** Payment verification method */
   verify?: 'onchain' | 'signature';
-  /** USDC mint address */
-  usdcMint?: string;
+  /** Custom token mint address (for USDC or custom tokens) */
+  mint?: string;
   /** Callback on successful payment */
   onPayment?: (payment: PaymentProof) => void | Promise<void>;
 }
@@ -112,3 +112,22 @@ export const USDC_MINTS = {
   mainnet: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
   devnet: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
 } as const;
+
+/**
+ * DNS402 native token mint address
+ */
+export const DNS402_MINT = 'E18mVPoZqe7FEQyJumioqPAcvKao96WadMK8PR5pump';
+
+/**
+ * Token decimals configuration
+ */
+export const TOKEN_DECIMALS: Record<string, number> = {
+  SOL: 9,
+  USDC: 6,
+  DNS402: 6,
+} as const;
+
+/**
+ * Supported currencies
+ */
+export type SupportedCurrency = 'SOL' | 'USDC' | 'DNS402';

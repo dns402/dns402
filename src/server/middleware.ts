@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { DNS402ServerConfig, DNS402_HEADERS, PaymentProof } from '../core/types';
+import { DNS402ServerConfig, DNS402_HEADERS, PaymentProof, SupportedCurrency } from '../core/types';
 import { verifyPayment, createConnection } from '../core/solana';
 import { generateRecord, generateDNSRecordString } from '../core/dns';
 
@@ -111,7 +111,7 @@ function send402(res: Response, config: DNS402ServerConfig): void {
  */
 export function createDNSRecord(config: {
   price: number;
-  currency: 'SOL' | 'USDC';
+  currency: SupportedCurrency;
   wallet: string;
   sessionTTL?: number;
   model?: 'per-request' | 'session' | 'subscription';
@@ -132,7 +132,7 @@ export function createFullDNSRecord(
   domain: string,
   config: {
     price: number;
-    currency: 'SOL' | 'USDC';
+    currency: SupportedCurrency;
     wallet: string;
     sessionTTL?: number;
     model?: 'per-request' | 'session' | 'subscription';
